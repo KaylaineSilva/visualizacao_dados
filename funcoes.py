@@ -1,6 +1,7 @@
 
 import pandas as pd
 import streamlit as st
+from visualizacoes.heatmap import heatmap_areas_meses
 
 def q1(df):
     df = df.copy()
@@ -74,3 +75,24 @@ def q2(df):
     df_filtrado = df[df['ano'].isin(anos_selecionados)]
 
     return df_filtrado
+
+def q3(df):
+    df = df.copy()
+    df["data"] = pd.to_datetime(df["data"])
+
+    # Extrair ano e mês
+    df['ano'] = df['data'].dt.year
+    df['mes'] = df['data'].dt.month
+    
+    anos = sorted(df['ano'].unique())
+
+    ano_q3 = st.selectbox(
+        "Selecione o ano:",
+        options=anos,
+        key="ano_q3"
+    )
+
+    # Filtrar os acontecimentos do ano selecionado
+    df_q3 = df[df["ano"] == ano_q3]
+
+    return df_q3
