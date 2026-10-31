@@ -10,26 +10,29 @@ import pandas as pd
 import plotly.express as px
 
 CORES_AREAS = {
-    "Computação": "#A8DADC",
-    "Matemática": "#CDB4DB",
-    "Estatística": "#FFCAD4",
-    "Cultura": "#FFE5B4"
+    "Matemática e Estatística": "#CDB4DB",
+    "Geral / Outros": "#B8BEC8",
+    "Inteligência Artificial e Ciência de Dados": "#A8DADC",
+    "Computação e Tecnologia": "#A9C5F5",
+    "Educação e Licenciatura": "#B9DDAA",
+    "Institucional, Cultura e Sociedade": "#FFCAD4",
+    "Inovação, Negócios e Carreira": "#FFE5B4"
 }
 
 def grafico_areas(df):
-    contagem = df.pivot_table(
-        index="area",
-        columns="tipo",
-        values="id",
-        aggfunc="count",
-        fill_value=0
-    ).reindex(
-        columns=["Evento", "Palestra"],
-        fill_value=0
-    ).reset_index()
+    contagem = (
+        df.groupby(["area", "tipo"])
+        .size()
+        .unstack(fill_value=0)
+        .reindex(
+            columns=["evento", "palestra", "evento_externo"],
+            fill_value=0
+        )
+        .reset_index()
+    )
 
     contagem["total"] = (
-        contagem["Evento"] + contagem["Palestra"]
+        contagem["evento"] + contagem["palestra"] + contagem["evento_externo"]
     )
 
     contagem = contagem.sort_values(
@@ -44,18 +47,18 @@ def grafico_areas(df):
         color="area",
         color_discrete_map=CORES_AREAS,
         text="total",
-        custom_data=["Evento", "Palestra"],
+        custom_data=["evento", "palestra", "evento_externo"],
         title="Distribuição de acontecimentos por área temática"
     )
 
     fig.update_traces(
         textposition="outside",
-        marker_line_width=0,
         hovertemplate=(
             "<b>%{x}</b><br><br>"
             "Eventos: %{customdata[0]}<br>"
             "Palestras: %{customdata[1]}<br>"
-            "Total: %{y}"
+            "Eventos externos: %{customdata[2]}<br>"
+            "<b>Total: %{y}</b>"
             "<extra></extra>"
         )
     )
@@ -67,7 +70,7 @@ def grafico_areas(df):
         font_color="#FFFFFF",
         showlegend=False,
         title_x=0.0,
-        title_y=0.95,
+        title_y=1,
         bargap=0.35,
         xaxis_title=None,
         yaxis_title="Quantidade de acontecimentos",
@@ -75,6 +78,14 @@ def grafico_areas(df):
             bgcolor="#1E1E1E",
             font_color="#FFFFFF",
             bordercolor="#CDB4DB"
+        ),
+        width=1200,    
+        height=650,    
+        margin=dict(
+            l=40,
+            r=40,
+            t=60,
+            b=130
         )
     )
 

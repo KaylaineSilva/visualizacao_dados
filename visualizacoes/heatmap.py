@@ -21,7 +21,7 @@ def heatmap_areas_meses(df):
         df.groupby(["area", "mes", "tipo"])
         .size()
         .unstack(fill_value=0)
-        .reindex(columns=["Evento", "Palestra"], fill_value=0)
+        .reindex(columns=["evento", "palestra", "evento_externo"], fill_value=0)
     )
 
     # Garantir todos os meses e áreas, mesmo sem registros
@@ -32,17 +32,22 @@ def heatmap_areas_meses(df):
 
     contagem = contagem.reindex(indice, fill_value=0)
     contagem["total"] = (
-        contagem["Evento"] + contagem["Palestra"]
+        contagem["evento"] + contagem["palestra"] + contagem["evento_externo"]
     )
 
-    # Matrizes para o heatmap e o hover
+    #matrizes para o hover
     total = contagem["total"].to_numpy().reshape(len(areas), 12)
-    eventos = contagem["Evento"].to_numpy().reshape(len(areas), 12)
-    palestras = contagem["Palestra"].to_numpy().reshape(len(areas), 12)
+    eventos = contagem["evento"].to_numpy().reshape(len(areas), 12)
+    palestras = contagem["palestra"].to_numpy().reshape(len(areas), 12)
+    externos = contagem["evento_externo"].to_numpy().reshape(len(areas), 12)
 
     customdata = [
         [
-            [int(eventos[i, j]), int(palestras[i, j])]
+            [
+                int(eventos[i, j]),
+                int(palestras[i, j]),
+                int(externos[i, j])
+            ]
             for j in range(12)
         ]
         for i in range(len(areas))
@@ -50,12 +55,6 @@ def heatmap_areas_meses(df):
 
     fig = go.Figure(
         data=go.Heatmap(
-            text=total,
-            texttemplate="%{text}",
-            textfont=dict(
-                size=14,
-                color="#FFFFFF"
-            ),
             z=total,
             x=MESES,
             y=areas,
@@ -74,13 +73,38 @@ def heatmap_areas_meses(df):
                 "<b>%{y} — %{x}</b><br><br>"
                 "Eventos: %{customdata[0]}<br>"
                 "Palestras: %{customdata[1]}<br>"
-                "Total: %{z}"
+                "Eventos externos: %{customdata[2]}<br>"
+                "<b>Total: %{z}</b>"
                 "<extra></extra>"
             ),
             xgap=3,
             ygap=3
         )
     )
+
+    # Cor do texto de acordo com a intensidade da célula
+    valor_maximo = total.max()
+
+    for i, area in enumerate(areas):
+        for j, mes in enumerate(MESES):
+            valor = int(total[i, j])
+
+            # Valores baixos têm fundo claro -> texto preto
+            # Valores altos têm fundo escuro -> texto branco
+            proporcao = valor / valor_maximo if valor_maximo > 0 else 0
+
+            cor_texto = "#000000" if proporcao < 0.5 else "#FFFFFF"
+
+            fig.add_annotation(
+                x=mes,
+                y=area,
+                text=str(valor),
+                showarrow=False,
+                font=dict(
+                    color=cor_texto,
+                    size=14
+                )
+        )
 
     fig.update_layout(
         template="plotly_dark",

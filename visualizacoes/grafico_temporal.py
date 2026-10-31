@@ -4,12 +4,14 @@ import plotly.express as px
 
 
 cores_anos = {
+    "2021": "#FFCAD4",
     "2022": "#142A98",
     "2023": "#800020",
     "2024": "#B8860B",
     "2025": "#4BD2D4",
     "2026": "#6617D4"
 }
+
 
 def grafico_temporal(df):
     df = df.copy()
@@ -19,9 +21,8 @@ def grafico_temporal(df):
 
     df['tipo'] = df['tipo'].replace({
         'evento': 'Eventos',
-        'eventos': 'Eventos',
         'palestra': 'Palestras',
-        'palestras': 'Palestras'
+        'evento_externo': 'Eventos externos'
     })
 
     # Contar acontecimentos por ano, mês e tipo
@@ -31,18 +32,38 @@ def grafico_temporal(df):
         .unstack(fill_value=0)
     )
 
-    # Garantir que as colunas existam
+    # Garantir que todas as categorias existam
     contagem = contagem.reindex(
-        columns=['Eventos', 'Palestras'],
+        columns=[
+            'Eventos',
+            'Palestras',
+            'Eventos externos'
+        ],
         fill_value=0
     )
 
-    # Total de acontecimentos
+    # Calcular o total
     contagem['total'] = (
-        contagem['Eventos'] + contagem['Palestras']
+        contagem['Eventos']
+        + contagem['Palestras']
+        + contagem['Eventos externos']
     )
 
     contagem = contagem.reset_index()
+
+    # Garantir todos os meses para os anos selecionados
+    anos = sorted(df['ano'].dropna().unique())
+
+    indice = pd.MultiIndex.from_product(
+        [anos, range(1, 13)],
+        names=['ano', 'mes']
+    )
+
+    contagem = (
+        contagem.set_index(['ano', 'mes'])
+        .reindex(indice, fill_value=0)
+        .reset_index()
+    )
 
     # Converter ano para categoria
     contagem['ano'] = contagem['ano'].astype(str)
@@ -54,14 +75,18 @@ def grafico_temporal(df):
         y='total',
         color='ano',
         markers=True,
-        custom_data=['Eventos', 'Palestras'],
+        custom_data=[
+            'Eventos',
+            'Palestras',
+            'Eventos externos'
+        ],
         title='Distribuição mensal de acontecimentos',
         labels={
             'mes': 'Mês',
             'total': 'Quantidade de acontecimentos',
             'ano': 'Ano'
         },
-        color_discrete_map=cores_anos,
+        color_discrete_map=cores_anos
     )
 
     fig.update_xaxes(
@@ -77,13 +102,20 @@ def grafico_temporal(df):
     fig.update_yaxes(rangemode='tozero')
 
     fig.update_traces(
+        line=dict(width=2),
+        marker=dict(size=5),
         hovertemplate=(
-            '<b>Ano: %{fullData.name}</b><br>'
-            'Mês: %{x}<br>'
-            'Total: %{y} acontecimentos<br>'
-            'Eventos: %{customdata[0]}<br>'
-            'Palestras: %{customdata[1]}'
-            '<extra></extra>'
+            "<b>%{fullData.name}</b>: %{y} acontecimentos"
+            "<extra></extra>"
+        )
+    )
+
+    fig.update_layout(
+        hovermode="x unified",
+        hoverlabel=dict(
+            bgcolor="#1E1E1E",
+            font_color="#FFFFFF",
+            font_size=12
         )
     )
 

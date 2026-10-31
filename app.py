@@ -10,8 +10,22 @@ from funcoes import q1, q2, q3
 
 st.title("Acontece no ICMC: eventos e palestras")
 
+st.markdown("""
+O **Acontece no ICMC** é um projeto de visualização de dados
+que busca explorar a distribuição dos eventos e palestras
+divulgados pelo ICMC-USP ao longo do tempo.
+
+A análise utiliza dados extraídos de e-mails de divulgação
+coletados entre **26 de abril de 2021 e 26 de outubro de 2026**,
+permitindo investigar quais áreas temáticas concentram mais
+acontecimentos, identificar padrões temporais e comparar
+a programação de diferentes anos.
+
+Explore os gráficos abaixo utilizando os filtros interativos.
+""")
+
 # Carregar os dados
-df = pd.read_csv("dados/sintetico/eventos_exemplo.csv")
+df = pd.read_csv("dados/reais/eventos.csv")
 
 # Q1 - Distribuição por área
 st.subheader("Q1 - Distribuição dos acontecimentos por área")
